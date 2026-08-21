@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko" class="crit-shell-real" style="--accent: #ff8800;"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crit — 자관</title>
+<style>
+  :root {
+    --accent:#B26A9E;
+    color-scheme: dark;
+    accent-color: var(--accent);
+    --bg:     color-mix(in srgb, var(--accent) 5%,  #131216);
+    --panel:  color-mix(in srgb, var(--accent) 8%, #1d1b21);
+    --panel2: color-mix(in srgb, var(--accent) 10%, #26242c);
+    --line:   color-mix(in srgb, var(--accent) 18%, #34313a);
+    --text:   color-mix(in srgb, var(--accent) 5%,  #f0edf3);
+    --dim:    color-mix(in srgb, var(--accent) 12%, #9a95a0);
+    --desc:   color-mix(in srgb, var(--accent) 12%, #d1cdd8);
+  }
+  body.light {
+    color-scheme: light;
+    --bg:     color-mix(in srgb, var(--accent) 3%,  #f7f6f8);
+    --panel:  color-mix(in srgb, var(--accent) 4%,  #ffffff);
+    --panel2: color-mix(in srgb, var(--accent) 5%,  #efedf1);
+    --line:   color-mix(in srgb, var(--accent) 13%, #d9d6dd);
+    --text:   color-mix(in srgb, var(--accent) 8%, #27242a);
+    --dim:    color-mix(in srgb, var(--accent) 9%, #6f6a76);
+    --desc:   color-mix(in srgb, var(--accent) 15%, #565060);
+  }
+  * { box-sizing:border-box; }
+  html { scrollbar-width:thin; scrollbar-color: color-mix(in srgb, var(--accent) 45%, var(--line)) transparent; }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:8px; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; line-height:1.65; }
+  .wrap { max-width:840px; margin:0 auto; padding:20px 16px 70px; }
+
+  .toolbar { position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter:blur(8px); display:grid; grid-template-columns:1fr auto 1fr; gap:8px;
+    align-items:center; padding:10px 2px; margin-bottom:14px; border-bottom:1px solid var(--line); }
+  .toolbar .ttl { font-size:14px; font-weight:700; text-align:center; white-space:nowrap; }
+  .toolbar.home { grid-template-columns:auto 1fr; }
+  .toolbar.home .tleft { display:none; }
+  .toolbar.home .ttl { text-align:left; }
+  .tslot { display:flex; gap:8px; align-items:center; }
+  .tleft { justify-content:flex-start; }
+  .tright { justify-content:flex-end; flex-wrap:wrap; }
+  .toolbar button { background:var(--panel2); color:var(--dim); border:1px solid var(--line);
+    border-radius:8px; padding:5px 11px; font-size:12.5px; cursor:pointer; font-family:inherit;
+    position:relative; z-index:8; }   /* 버튼은 스티커보다 위 (배포 페이지에는 버튼 없음) */
+  .toolbar button:hover { color:var(--text); border-color:var(--accent); }
+  .settings { position:relative; z-index:8; }
+  .spanel { display:none; position:absolute; right:0; top:36px; z-index:20; width:270px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px;
+    box-shadow:0 10px 30px #0008; }
+  .spanel.open { display:block; }
+  .spanel h4 { margin:0 0 8px; font-size:12.5px; color:var(--dim); font-weight:600; }
+  .srow { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; margin-bottom:8px; }
+  .srow input[type=color] { width:34px; height:24px; border:none; background:none; padding:0; cursor:pointer; }
+  .srow label { display:flex; align-items:center; gap:4px; font-size:12.5px; color:var(--dim); cursor:pointer; }
+  .cwrap { display:flex; align-items:center; gap:6px; }
+  .hexin { width:74px; background:var(--panel2); border:1px solid var(--line); border-radius:6px;
+    color:var(--text); font-size:12px; padding:4px 6px; font-family:Consolas,"D2Coding",monospace; }
+  input::placeholder, textarea::placeholder { color:color-mix(in srgb, var(--accent) 30%, var(--dim)); }
+  input[type=checkbox], input[type=radio] {
+    appearance:none; -webkit-appearance:none; width:15px; height:15px; flex:none;
+    border:1.5px solid var(--line); background:var(--panel2); cursor:pointer;
+    margin:0 3px 0 0; vertical-align:-2px; transition:.12s; }
+  input[type=checkbox] { border-radius:4.5px; }
+  input[type=radio] { border-radius:50%; }
+  input[type=checkbox]:checked { background:var(--accent)
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 7"/></svg>')
+    center/10px 10px no-repeat; border-color:var(--accent); }
+  input[type=radio]:checked { background:var(--accent); border-color:var(--accent);
+    box-shadow:inset 0 0 0 3px var(--panel); }
+
+  /* ── 자관 목록: 균형 배치 카드 ── */
+  .rows { display:flex; flex-direction:column; gap:14px; }
+  .row { display:flex; gap:14px; justify-content:center; }
+  .gcard { border-radius:16px; overflow:hidden; background:var(--panel);
+    border:1px solid var(--line); cursor:pointer; transition:.15s; display:flex; flex-direction:column; }
+  .gcard:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .gimg { height:182px; background-size:cover; background-position:center; flex:none; }
+  .gbody { padding:12px 15px 14px; }
+  .gname { display:flex; align-items:baseline; gap:8px; }
+  .gname b { font-size:15.5px; font-weight:800; letter-spacing:-.3px; }
+  .gdate { font-size:11px; color:var(--dim); }
+  .gdday { margin-left:auto; flex:none; font-size:11px; font-weight:700; color:var(--gacc, var(--accent)); }
+  .gcatch { font-size:12.5px; color:var(--accent); font-weight:400; font-style:italic; margin-top:2px; }
+  .gdesc { font-size:12.5px; color:var(--desc); margin-top:4px; display:-webkit-box;
+    -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .empty { color:var(--dim); font-size:13px; font-style:italic; text-align:center; padding:40px 0; }
+
+  /* ── 자관 상세 ── */
+  .detail { display:none; }
+  .dhead { position:relative; height:322px; border-radius:18px; background-size:cover;
+    background-position:center; }
+  .dname { position:absolute; left:22px; bottom:-20px; background:var(--panel);
+    border:1px solid var(--line); border-radius:14px; padding:8px 20px;
+    font-size:20px; font-weight:800; letter-spacing:-.4px; }
+  /* 이름 뱃지와 대칭으로, 헤더 우측 하단 모서리에 걸치는 날짜/디데이 뱃지 */
+  .ddatebadge { position:absolute; right:22px; bottom:-20px; background:var(--panel);
+    border:1px solid var(--line); border-radius:14px; padding:8px 16px;
+    display:flex; align-items:baseline; gap:8px; }
+  .dinfo { margin-top:38px; padding:0 6px; }
+  .ddate { font-size:12px; color:var(--dim); }
+  .ddday { font-size:12px; font-weight:700; color:var(--accent); }
+  .dcatch { font-size:14.5px; color:var(--accent); font-weight:400; font-style:italic; margin-top:2px; }
+  .ddesc { font-size:13.5px; color:var(--desc); margin-top:8px; white-space:pre-wrap;
+    border-left:3px solid color-mix(in srgb, var(--accent) 45%, var(--line)); padding-left:12px; }
+  .sect { font-size:12.5px; color:var(--dim); font-weight:700; margin:26px 0 12px;
+    display:flex; align-items:center; gap:8px; }
+  .sect::after { content:""; flex:1; border-top:1px solid var(--line); order:1; }
+  .sadd { order:2; width:22px; height:22px; flex:none; border-radius:7px; background:var(--panel2);
+    color:var(--dim); border:1px solid var(--line); cursor:pointer; font-size:14px; line-height:1;
+    display:flex; align-items:center; justify-content:center; padding:0; font-family:inherit; transition:.15s; }
+  .sadd:hover { color:var(--text); border-color:var(--accent); }
+  .pcard { background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    overflow:hidden; cursor:pointer; transition:.15s; display:flex; flex-direction:column; }
+  .pcard:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .pimg2 { aspect-ratio:4/3; background-size:cover; background-position:center; }
+  .pbody { padding:9px 12px 11px; }
+  .pname { font-size:14.5px; font-weight:700; display:flex; flex-wrap:wrap; align-items:baseline; gap:6px; }
+  .minebadge { flex:none; margin-left:auto; border-radius:999px; padding:1px 8px; font-size:10px;
+    font-weight:600; align-self:center;
+    background:color-mix(in srgb, var(--accent) 16%, var(--panel2));
+    border:1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); color:var(--text); }
+  /* 다른 표기(로마자 등)는 이름 옆이 아니라 항상 아랫줄에 - 이름이 길면 옆칸에 끼어서
+     한글 이름 자체가 줄바꿈되는 문제가 있었다 (order로 항상 마지막 줄에 배치) */
+  .palt { font-size:11.5px; font-weight:400; color:var(--dim); margin-left:0; flex-basis:100%; order:3; }
+  .pmeta { font-size:11.5px; color:var(--dim); margin-top:3px; }
+  .pline { font-size:12.5px; color:var(--desc); margin-top:1px; display:-webkit-box;
+    -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .paddbtn { width:100%; background:var(--panel2); border:1px dashed var(--line); border-radius:12px;
+    color:var(--dim); font-family:inherit; font-size:12.5px; padding:12px; cursor:pointer; margin-top:12px; }
+  .paddbtn:hover { border-color:var(--accent); color:var(--text); }
+
+  footer { margin-top:26px; color:var(--dim); font-size:12px; text-align:center; }
+
+  /* ── 스티커 (편집 모드에서만 조작, 위 영역 침범 허용) ── */
+  .sticker { position:absolute; cursor:default; touch-action:none; z-index:6; user-select:none;
+    pointer-events:none; }   /* 툴바 배경보다 위 */
+  body.editing .sticker { pointer-events:auto; }
+  .sticker img { width:100%; display:block; pointer-events:none; }
+  .sticker .sdel, .sticker .srsz, .sticker .srot { position:absolute; display:none; }
+  body.editing .sticker:hover .sdel, body.editing .sticker:hover .srsz,
+  body.editing .sticker:hover .srot { display:flex; }
+  /* 편집 모드: 카드 이동/추가 대신 스티커 편집만 */
+  body.editing .gcard, body.editing .pcard, body.editing .paddbtn,
+  body.editing .logrow, body.editing .gitem, body.editing .sadd { pointer-events:none; opacity:.55; }
+  /* 편집 모드 중에는 「편집 모드 해제」와 「스티커 추가」만 남긴다 (두 줄 줄바꿈 방지) */
+  body.editing #editbtn, body.editing #addbtn, body.editing #savebtn,
+  body.editing .settings { display:none !important; }
+  .sticker .sdel { top:-9px; right:-9px; width:18px; height:18px; border-radius:50%;
+    background:#a84848; color:#fff; border:none; font-size:11px; line-height:1;
+    align-items:center; justify-content:center; cursor:pointer; }
+  .sticker .srsz { bottom:-7px; right:-7px; width:14px; height:14px; border-radius:50%;
+    background:var(--accent); border:2px solid var(--panel); cursor:nwse-resize; }
+  .sticker .srot { top:-7px; left:-7px; width:14px; height:14px; border-radius:50%;
+    background:var(--panel2); border:2px solid var(--accent); cursor:grab; }
+
+  /* 프로필 편집 페이지 */
+  .pform { display:none; }
+  .pf-card { background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:22px 26px 24px; max-width:780px; margin:0 auto; position:relative; }
+  .flab { display:block; font-size:12px; font-weight:700; color:var(--dim); margin:14px 0 5px; }
+  .fin { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:7px 10px; font-size:13px; font-family:inherit; outline:none; }
+  .fin:focus { border-color:var(--accent); }
+  .fta { width:100%; min-height:72px; background:var(--panel2); color:var(--text);
+    border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px;
+    font-family:inherit; resize:none; outline:none; line-height:1.55; }
+  .fta:focus { border-color:var(--accent); }
+  .fgrid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 18px; }
+  .fgrid4 { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:0 12px; }
+  @media (max-width:640px) { .fgrid2, .fgrid4 { grid-template-columns:1fr; } }
+  .exrow { display:flex; gap:8px; align-items:flex-start; margin-bottom:8px; }
+  .exrow .fta { min-height:52px; }
+  .exdel { flex:none; width:26px; height:26px; border-radius:7px; background:var(--panel2);
+    color:#e08a8a; border:1px solid var(--line); cursor:pointer; font-size:13px; line-height:1;
+    margin-top:1px; }
+  .exdel:hover { border-color:#a84848; }
+  .exaddbtn { background:var(--panel2); border:1px dashed var(--line); border-radius:8px;
+    color:var(--dim); font-family:inherit; font-size:12px; padding:6px 12px; cursor:pointer; }
+  .exaddbtn:hover { border-color:var(--accent); color:var(--text); }
+  /* 로그 리스트 - 로그가 많아질 수 있어 뱃지(칩) 형태로: 이름 크기만큼만 차지하고 여러 개면 옆으로 흐름 */
+  #loglist { display:flex; flex-wrap:wrap; gap:8px; }
+  .logrow { display:flex; align-items:center; gap:7px; padding:6px 12px; background:var(--panel);
+    border:1px solid var(--line); border-radius:999px; cursor:pointer; transition:.15s; max-width:100%; }
+  .logrow:hover { border-color:var(--accent); }
+  .ltit { font-size:13px; font-weight:600; min-width:0; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; max-width:220px; }
+  .ldate { font-size:11.5px; color:var(--dim); flex:none; }
+  .llink { flex:none; display:flex; color:var(--dim); }
+  .llink:hover { color:var(--accent); }
+  .paddbtn.slim { padding:8px; margin-top:2px; }
+
+  /* 갤러리 */
+  .gal { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px 10px; align-items:start; }
+  .gcap { margin-top:6px; padding:0 8px; }
+  .gcap b { display:block; font-size:13px; font-weight:700; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
+  .gcap span { display:block; font-size:12px; color:var(--dim); margin-top:1px; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
+  .gitem { aspect-ratio:4/3; border-radius:10px; border:1px solid var(--line); background-size:cover;
+    background-position:center; position:relative; cursor:pointer; transition:.15s; overflow:hidden; }
+  .gitem:hover { border-color:var(--accent); }
+  .gdel { position:absolute; top:6px; right:6px; width:20px; height:20px; border-radius:50%;
+    background:#a84848; color:#fff; border:none; font-size:12px; line-height:1; cursor:pointer;
+    display:none; align-items:center; justify-content:center; }
+  .gitem:hover .gdel { display:flex; }
+  /* 갤러리 드래그 정렬: 잡으면 80% 고스트가 따라오고, 놓일 자리는 점선 슬롯으로 비워둠 */
+  .ggap { aspect-ratio:4/3; border:2px dashed color-mix(in srgb, var(--accent) 60%, transparent); border-radius:10px;
+    background:color-mix(in srgb, var(--accent) 7%, transparent); }
+  .gghost { position:fixed; z-index:90; pointer-events:none; opacity:.85; transform:scale(.8); transform-origin:top left; }
+  .gcell.gdragging { display:none; }
+  .gadd { display:flex; align-items:center; justify-content:center; border-style:dashed;
+    color:var(--dim); font-size:22px; background:var(--panel2); }
+  .gadd:hover { color:var(--text); }
+  .gadd.over { border-color:var(--accent); }
+  /* 비밀 이미지: 자물쇠 오버레이 (앱에서만 보임, 게시본 제외) */
+  .gitem.secret::before { content:""; position:absolute; inset:0; background:rgba(0,0,0,.45); }
+  .glock { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:#fff; opacity:.92; pointer-events:none; }
+
+  /* 프로필 미리보기 페이지 */
+  .pv-head { display:flex; gap:24px; margin-bottom:6px; padding:8px 46px 0; }
+  @media (max-width:700px) { .pv-head { padding:0; } }
+  .pv-banner { width:290px; flex:none; aspect-ratio:4/3; border-radius:14px;
+    background-size:cover; background-position:center; }
+  .pv-headr { flex:1; min-width:0; display:flex; flex-direction:column;
+    justify-content:center; align-items:center; text-align:center; }
+  @media (max-width:640px) { .pv-head { flex-direction:column; } .pv-banner { width:100%; } }
+  .pv-namerow { display:flex; flex-wrap:wrap; align-items:baseline; column-gap:10px; row-gap:0; justify-content:center; }
+  .pv-name { font-size:22px; font-weight:800; letter-spacing:-.4px; }
+  /* 다른 표기는 이름 옆이 아니라 항상 아랫줄에 - 길면 이름이 옆칸에 끼여 줄바꿈되던 문제.
+     margin-top을 살짝 당겨서 이름 바로 아래 붙어 보이게 한다 */
+  .pv-alt { font-size:13px; color:var(--dim); flex-basis:100%; text-align:center; order:3; margin-top:-4px; }
+  .pv-editbtn { position:absolute; top:18px; right:20px; background:var(--panel2); color:var(--dim);
+    border:1px solid var(--line); border-radius:8px; padding:4px 13px; font-size:12.5px;
+    cursor:pointer; font-family:inherit; }
+  .pv-editbtn:hover { color:var(--text); border-color:var(--accent); }
+  .pv-line { color:var(--desc); font-size:13.5px; margin-top:3px; }
+  .pv-chips { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; justify-content:center; }
+  .pv-chip { background:var(--panel2); border:1px solid var(--line); border-radius:999px;
+    padding:3px 13px; font-size:12.5px; }
+  .pv-chip b { color:var(--dim); font-weight:600; margin-right:7px; font-size:11px; }
+  .pv-text { font-size:13px; color:var(--desc); white-space:pre-wrap; }
+  .pv-ex { background:var(--panel2); border-left:3px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+    border-radius:8px; padding:9px 13px; font-size:13px; color:var(--desc);
+    white-space:pre-wrap; margin-bottom:8px; }
+
+  /* 프로필 카드 드래그 순서 변경 */
+  .pcard { touch-action:none; }
+  .pcard.ghosted { opacity:.3; border-style:dashed; border-color:color-mix(in srgb, var(--accent) 65%, var(--line)); }
+  .pcard.dragghost { position:fixed; z-index:100; margin:0; pointer-events:none;
+    transform:scale(.8); opacity:.95; cursor:grabbing;
+    box-shadow:0 14px 36px rgba(0,0,0,.45); transition:none; }
+  body.pdragging { cursor:grabbing; user-select:none; }
+  body.pdragging .pcard:hover { transform:none; border-color:var(--line); }
+  body.pdragging .pcard.ghosted:hover { border-color:color-mix(in srgb, var(--accent) 65%, var(--line)); }
+  .sect .shint { font-size:11px; font-weight:400; color:var(--dim); }
+  .pf-img { aspect-ratio:4/3; max-width:380px; margin:0 auto 14px; border-radius:14px; background-size:cover; background-position:center;
+    border:1.5px dashed var(--line); cursor:pointer; display:flex; align-items:center;
+    justify-content:center; color:var(--dim); font-size:12.5px; transition:.15s; margin-bottom:14px; }
+  .pf-img:hover { border-color:var(--accent); }
+  .pf-img.hasimg { border-style:solid; color:transparent; }
+  .pf-name { width:100%; background:none; border:none; color:var(--text); font-family:inherit;
+    font-size:20px; font-weight:800; letter-spacing:-.4px; outline:none; padding:0;
+    border-bottom:1.5px dashed transparent; }
+  .pf-name:hover, .pf-name:focus { border-bottom-color:color-mix(in srgb, var(--accent) 50%, var(--line)); }
+  .pf-line { width:100%; background:none; border:none; color:var(--desc); font-family:inherit;
+    font-size:13.5px; outline:none; padding:0; margin-top:4px; border-bottom:1.5px dashed transparent; }
+  .pf-line:hover, .pf-line:focus { border-bottom-color:color-mix(in srgb, var(--accent) 50%, var(--line)); }
+
+  /* 모달 */
+  .overlay { position:fixed; inset:0; z-index:60; background:#0008; display:flex; align-items:center; justify-content:center; }
+  .modal { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; width:340px; max-height:88vh; overflow:auto; }
+  .modal h3 { margin:0 0 12px; font-size:15px; }
+  .mrow { display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:10px; }
+  .mrow > span:first-child { flex:none; width:70px; color:var(--dim); }
+  .mrow input[type=text], .mrow input[type=date], .mrow input[type=month] {
+    flex:1; background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:6px 9px; font-size:13px; font-family:inherit; outline:none; min-width:0; }
+  .mrow input:focus { border-color:var(--accent); }
+  .mrow input[type=color] { flex:none; width:36px; height:26px; border:none; background:none; padding:0; cursor:pointer; }
+  .modal textarea { width:100%; min-height:64px; background:var(--panel2); color:var(--text);
+    border:1px solid var(--line); border-radius:8px; padding:8px; font-size:13px;
+    font-family:inherit; resize:none; outline:none; }
+  .hint { font-size:11.5px; color:var(--dim); margin:6px 0 0; }
+  .dropzone { border:2px dashed var(--line); border-radius:12px; padding:22px 12px;
+    text-align:center; color:var(--dim); font-size:12.5px; cursor:pointer; transition:.15s;
+    background-size:cover; background-position:center; }
+  .dropzone.over { border-color:var(--accent); color:var(--text); }
+  .mbtns { display:flex; gap:8px; justify-content:flex-end; margin-top:14px; }
+  .mbtns button { background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:6px 14px; font-size:13px; cursor:pointer; font-family:inherit; }
+  .mbtns button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .mbtns button.danger { background:#a84848; border-color:#a84848; color:#fff; }
+  /* 이미지 자르기 */
+  .cropvp { position:relative; overflow:hidden; border-radius:10px; background:#0a090c;
+    width:100%; border:1px solid var(--line); }
+  .cropvp img { position:absolute; left:0; top:0; max-width:none; user-select:none;
+    touch-action:none; cursor:grab; }
+  .cropvp img:active { cursor:grabbing; }
+  input[type=range].cropzoom { appearance:none; -webkit-appearance:none; height:6px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:999px; outline:none; }
+  input[type=range].cropzoom::-webkit-slider-thumb { appearance:none; -webkit-appearance:none;
+    width:15px; height:15px; border-radius:50%; background:var(--accent);
+    border:3px solid color-mix(in srgb, var(--accent) 30%, var(--panel)); cursor:pointer; }
+  input[type=date]::-webkit-calendar-picker-indicator,
+  input[type=month]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:.75; }
+
+  /* 상단 전역 메뉴 */
+  .topnav { display:flex; gap:6px; align-items:center; padding:2px 2px 0; margin-bottom:6px; padding-bottom:9px;
+    border-bottom:1px solid var(--line); }
+  .navid { display:flex; align-items:center; gap:7px; font-size:13.5px; font-weight:800;
+    letter-spacing:-.3px; margin-right:10px; padding:2px 2px; }
+  .navgear { margin-left:auto; display:flex; padding:6px !important; border-radius:8px !important; }
+  .topnav a, .topnav span.nv { padding:5px 14px; border-radius:999px; font-size:12.5px;
+    color:var(--dim); text-decoration:none; border:1px solid transparent; transition:.12s; }
+  .topnav a:hover { color:var(--text); border-color:var(--line); }
+  .topnav .on { background:color-mix(in srgb, var(--accent) 16%, var(--panel2));
+    border:1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+    color:var(--text); font-weight:600; }
+  .topnav .memo { opacity:.55; cursor:help; }
+</style><style>/* crit-nofocus */ *:focus, *:focus-visible { outline: none !important; box-shadow: none; }</style><style>/* crit-modal-label: 모달 라벨이 세로로 꺾이지 않게 */ .modal .mrow > span:first-child { flex: none; white-space: nowrap; }</style><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><!-- crit-font --><style>/* crit-scrollbar: 얇은 테마 스크롤바 (화살표 버튼 제거) */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--accent) 30%, var(--line)) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--accent) 28%, var(--line)); border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--accent) 48%, var(--line)); }
+*::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+*::-webkit-scrollbar-corner { background: transparent; }
+</style><style>/* crit-no-themebtn: 목록 페이지는 전역 테마 수신 - 개별 테마는 상세/뷰어 안에서 */ .toolbar .settings { display: none !important; }</style><style>/* crit-nav-accent: 활성 탭·닉네임 포인트 컬러 톤 */
+html:not(.crit-embedded) .topnav .on { background: color-mix(in srgb, var(--accent) 26%, var(--panel2)) !important;
+  color: color-mix(in srgb, var(--accent) 60%, var(--text)) !important;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line)) !important; }
+html:not(.crit-embedded) .navid { color: color-mix(in srgb, var(--accent) 55%, var(--text)); }
+</style><style>/* crit-nav-preheight */ html:not(.crit-embedded) .topnav { height: 54px; box-sizing: border-box; overflow: hidden; padding-top: 0 !important; padding-bottom: 0 !important; align-items: center !important; } html:not(.crit-embedded) .navid { line-height: 1 !important; } html:not(.crit-embedded) .topnav a { line-height: 1 !important; }</style><style>.toolbar, .catbar, .ctl, .fadd, .fdel, #previewbtn, .gdel, .sdel, .srsz, .srot, .bctrl, .bph, .pimg .ph, .gadd, .sadd, .addbtn, .tagadd, .exaddbtn, .imgaddbtn, .pdel, .composer, .del, .tag .x, .badge .x, .teditbtn, .gologbtn, .newbtn, #trashbtn, select { display: none !important; } button:not(.linkbtn):not(.critkeep) { display: none !important; } input, textarea { pointer-events: none !important; } .sbox input, .msearch input { pointer-events: auto !important; } .mbtnrow { display: none !important; } .crit-mdview { display: block !important; } .topnav { border-bottom: none !important; flex: none !important; } #critscroll { scrollbar-gutter: stable; overflow-x: clip; } .dayview { position: static !important; top: auto !important; } .crit-pub-range { display:inline-block; width:100%; height:6px; background:var(--panel2); border-radius:999px; position:relative; } .crit-pub-range i { position:absolute; top:50%; width:14px; height:14px; border-radius:50%; background:var(--accent); border:2.5px solid color-mix(in srgb, var(--accent) 25%, var(--panel)); transform:translate(-50%,-50%); box-sizing:border-box; }</style></head>
+<body class="light preview"><nav class="topnav">
+    <span class="navid"><span class="nava" style="background-image: url(&quot;images/08017a85-37dc-46e7-8eed-bfec23b1f4a2.png&quot;);"></span>조각</span>
+  
+  
+  
+  
+    
+  
+  
+  <a href="intro.html" onclick="event.preventDefault();location.href='intro.html?_r='+Date.now();">소개</a><a href="schedule.html" onclick="event.preventDefault();location.href='schedule.html?_r='+Date.now();">일정</a><a href="jagwan.html" class="on" onclick="event.preventDefault();location.href='jagwan.html?_r='+Date.now();">자관</a><a href="logs.html" onclick="event.preventDefault();location.href='logs.html?_r='+Date.now();">로그</a><a href="threads.html" onclick="event.preventDefault();location.href='threads.html?_r='+Date.now();">타래</a><a href="memo.html" onclick="event.preventDefault();location.href='memo.html?_r='+Date.now();">메모</a></nav><!-- crit-theme-early: 저장된 다크/라이트·포인트컬러를 첫 페인트 전에 적용해 기본값이 잠깐 보이는 깜빡임을 없앰 -->
+
+<div class="wrap crit-fixedbar"><div class="toolbar home">
+    <div class="tslot tleft">
+      <button id="backbtn" style="display:none">← 목록</button>
+    </div>
+    <span class="ttl" id="ttl"></span>
+    <div class="tslot tright">
+    <button id="editbtn" style="display:none">자관 수정</button>
+    <button id="modebtn" title="스티커를 붙이고 편집하는 모드">스티커 모드</button>
+    <button id="stickerbtn" title="이 페이지에 스티커 붙이기" style="display:none">스티커 추가</button><button id="stickerlistbtn" title="이 화면에 붙인 스티커를 관리해요" style="display: none;">스티커 리스트</button>
+    <button id="addbtn">+ 자관 등록</button>
+    <button id="savebtn" title="변경 내용을 게시본에 반영 (GitHub 저장소 업데이트)">업데이트</button>
+    <div class="settings">
+      <button id="setbtn">테마</button>
+      
+    </div>
+    </div>
+  </div></div><div id="critscroll"><div class="wrap">
+  
+  
+
+  <div id="list" style="position: relative; display: block;" data-crit-ref-w="900" data-crit-ref-h="101"><div class="empty">등록된 자관이 없어요. 「+ 자관 등록」으로 첫 자관을 만들어보세요.</div></div>
+
+  <div class="detail" id="detail" style="display: none;"></div>
+
+  <div class="pform" id="pform" style="display: none;"></div>
+</div></div>
+<input type="file" id="filepick" accept="image/*" style="display:none" data-crit-i="4" value="" readonly="" tabindex="-1">
+
+
+<!-- Crit 앱 임베드용: 다른 페이지의 iframe 안에서 열릴 때는 자체 전역 메뉴를 숨깁니다 -->
+<style>html.crit-embedded .topnav { display: none !important; }</style>
+
+
+<!-- Crit: 상단 전역 메뉴 통일 - 페이지별 콘텐츠 폭(.wrap max-width)과 무관하게 항상 창 전체 폭의
+     고정 헤더로 표시해, 페이지를 오갈 때 메뉴 크기/위치가 변하지 않게 합니다 -->
+<style>
+  html:not(.crit-embedded) .topnav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    background: var(--bg);
+    padding: 12px 20px 10px !important;
+    margin: 0 !important;
+  }
+  html:not(.crit-embedded) .wrap { padding-top: 58px !important; }
+  /* 모바일 폭에서는 닉네임 배지를 빼고 메뉴 간격/패딩을 줄여서, 항목이 두 줄로 줄바꿈되며
+     깨져 보이던 문제(실제로 겪음)를 없앤다 - 메뉴 개수가 늘어도 한 줄에 들어가게 */
+  @media (max-width: 760px) {
+    html:not(.crit-embedded) .navid { display: none !important; }
+    html:not(.crit-embedded) .topnav { gap: 2px !important; padding: 10px 10px 8px !important; }
+    html:not(.crit-embedded) .topnav a { padding: 4px 8px !important; font-size: 12px !important; }
+  }
+</style>
+
+<!-- Crit: 전역 테마 동기화 - 포인트 컬러/다크·라이트를 모든 화면이 공유합니다.
+     (자관/로그 페이지는 전역 값을 기본값으로만 받고, 그 안의 테마 변경은 해당 페이지에만 적용) -->
+
+<!-- crit-nav-apply: 환경설정(crit-settings)의 닉네임/아바타/메뉴 순서를 상단 메뉴에 반영 + 메뉴 글씨 확대 -->
+<style>
+  html:not(.crit-embedded) .topnav a { font-size: 14px !important; padding: 4px 15px !important; }
+  html:not(.crit-embedded) .navid { font-size: 15.5px !important; gap: 8px; }
+  .topnav .nava { width: 30px; height: 30px; border-radius: 9px; background-size: cover;
+    background-position: center; display: inline-block; vertical-align: middle; flex: none; }
+</style>
+
+
+<!-- crit-publish: 업데이트 버튼 = 게시본 설정대로 전체 게시 -->
+
+<!-- crit-global-publish: 게시본 설정(순서/배포 체크)대로 모든 페이지를 스냅샷해 한 번에 게시 -->
+
+<!-- crit-scroll-layout: 세로 스크롤이 상단 메뉴를 제외한 아래 영역에만 생기도록 재배치 -->
+<style>
+  html:not(.crit-embedded) body, html.crit-shell-real body { overflow: hidden; height: 100vh; margin: 0; padding: 0 !important;
+    display: flex; flex-direction: column; }
+  html:not(.crit-embedded) body > .topnav, html.crit-shell-real body > .topnav { position: static !important; flex: none; background: var(--bg);
+    height: 54px; box-sizing: border-box; align-items: center; flex-wrap: nowrap; overflow: hidden;
+    padding: 12px 20px 10px !important; margin: 0 !important; }
+  html:not(.crit-embedded) #critscroll, html.crit-shell-real #critscroll { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+  html:not(.crit-embedded) #critscroll > .wrap, html.crit-shell-real #critscroll > .wrap { padding-top: 6px !important; margin-top: 0 !important; }
+  html:not(.crit-embedded) .crit-fixedbar, html.crit-shell-real .crit-fixedbar { flex: none !important; display: block !important;
+    height: auto !important; min-height: 0 !important; overflow: visible;
+    padding-top: 2px !important; padding-bottom: 2px !important; margin-top: 0 !important; margin-bottom: 0 !important; }
+  html:not(.crit-embedded) .crit-fixedbar .toolbar, html.crit-shell-real .crit-fixedbar .toolbar { margin-top: 0 !important; margin-bottom: 0 !important;
+    padding-right: 22px !important; padding-left: 32px !important; }
+  /* 이전 페이지 버튼은 항상 왼쪽에 */
+  html:not(.crit-embedded) .crit-fixedbar .toolbar #backbtn, html.crit-shell-real .crit-fixedbar .toolbar #backbtn { justify-self: start; margin-right: auto; }
+  html:not(.crit-embedded) .crit-fixedbar .toolbar .tleft, html.crit-shell-real .crit-fixedbar .toolbar .tleft { justify-content: flex-start; }
+</style>
+
+<!-- crit-bridge: 게시기(백그라운드 창)가 자관 데이터·화면 전환을 쓸 수 있게 노출 -->
+
+<!-- crit-modal-dragguard: 모달 안에서 드래그를 시작해 바깥에서 놓아도 모달이 닫히지 않게 (전체 모달 공통) -->
+
+<!-- crit-card-accent: 자관 카드의 캐치프레이즈 글씨·호버 테두리를 자관별 테마 색으로 -->
+<style>
+  .gcard { --gacc: var(--accent); }
+  .gcard .gcatch { color: var(--gacc) !important; }
+  .gcard:hover { border-color: color-mix(in srgb, var(--gacc) 62%, var(--line)) !important; }
+</style>
+
+<!-- crit-gwans-persist: 자관 데이터(프로필/로그 연결/갤러리/스티커/테마색) 영속화 - 다시 열어도 유지 -->
+
+<!-- crit-spanel-top: 테마 드롭다운이 스티커/버튼 위에 표시되도록 -->
+
+<!-- crit-fresh-jagwan: 신규 시작이면 데모 데이터를 비운다 -->
+
+<!-- crit-hex-any: 모달의 컬러픽커 옆에 hex 직접 입력칸 자동 추가 -->
+
+<!-- crit-gwan-stickers: 자관 스티커 리스트/배치 저장·복원 -->
+
+<style>/* crit-pv-headr-shift: 프로필 이름/정보 블록을 살짝 오른쪽으로 */
+.pv-headr { padding-left: 18px; }
+</style>
+<!-- crit-gwan-sticker-fixed: 자관 스티커 - 크기·세로 위치는 px 고정, 가로는 비율 유지하되
+     컨테이너 밖으로 나간 스티커는 가까운 모서리 기준 고정 거리(겹침 방지) -->
+
+<!-- crit-close-modal: X 버튼 → 트레이 최소화/완전 종료 선택 (기억하기) -->
+
+<!-- crit-fancy-all: 앱의 모든 셀렉트를 테마 드롭다운으로 (동적 생성/표시 전환 포함) -->
+<style>
+  .fwrap { position: relative; flex: 1; display: flex; min-width: 0; }
+  .fwrap .fsel { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px;
+    color: var(--text); font-size: 13px; font-family: inherit; cursor: pointer; text-align: left; min-width: 0; }
+  .fwrap .fsel { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fwrap .fsel::after { content: "▾"; font-size: 10px; color: var(--dim); flex: none; }
+  .fwrap .fsel:hover, .fwrap .fsel.open { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .fwrap .fmenu { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 80;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px;
+    box-shadow: 0 10px 30px #0007; max-height: 240px; overflow-y: auto; }
+  .fwrap .fitem { padding: 7px 11px; border-radius: 7px; font-size: 13px; color: var(--text); cursor: pointer;
+    display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fwrap .fitem:hover { background: color-mix(in srgb, var(--accent) 20%, var(--panel2)); }
+  .fwrap .fitem.on { color: color-mix(in srgb, var(--accent) 65%, var(--text)); font-weight: 700; }
+  .fwrap .fdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+</style>
+
+<!-- crit-log-combo: 보관함 로그 선택을 검색형 자동완성으로 (드롭다운이 모달 밖으로) -->
+<style>
+  #l-combo { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px 11px; color: var(--text); font-size: 13px; font-family: inherit; outline: none; width: 100%; box-sizing: border-box; }
+  #l-combo:focus { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .lcombo-panel { position: fixed; z-index: 120; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 4px; box-shadow: 0 10px 30px #0007; max-height: 220px; overflow-y: auto; }
+  .lcombo-item { padding: 7px 11px; border-radius: 7px; font-size: 13px; cursor: pointer; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lcombo-item:hover { background: color-mix(in srgb, var(--accent) 20%, var(--panel2)); }
+  .lcombo-item.on { color: color-mix(in srgb, var(--accent) 65%, var(--text)); font-weight: 700; }
+  .lcombo-item.dim { color: var(--dim); cursor: default; }
+</style>
+
+<!-- crit-extlink: 외부 링크는 항상 기본 브라우저로 (프로토콜 없는 주소 보정 포함) -->
+
+<!-- crit-gwan-cardtools: 자관 카드 우클릭 삭제 + 드래그 재정렬 (실시간 밀어내기) -->
+<style>
+  .gcard.gdragging { opacity: .25; }
+  .gctx { position: fixed; z-index: 140; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 4px; min-width: 150px; box-shadow: 0 10px 30px #0007; }
+  .gctx button { display: block; width: 100%; background: none; border: none; color: var(--text);
+    font-size: 12.5px; padding: 7px 12px; border-radius: 7px; cursor: pointer; font-family: inherit; text-align: left; }
+  .gctx button:hover { background: color-mix(in srgb, var(--accent) 20%, var(--panel2)); }
+  .gctx button.red { color: #e08b8b; }
+</style>
+
+<style>/* crit-toolbar-fullbleed: 고정 툴바 배경을 화면 전체 폭으로 (스티커가 지나가도 끊겨 보이지 않게) */
+/* crit-nohscroll: 50vw 계산이 스크롤바 폭을 무시해 생기는 가로 스크롤 차단 */
+html:not(.crit-embedded), html:not(.crit-embedded) body, html.crit-shell-real, html.crit-shell-real body { overflow-x: clip !important; }
+html:not(.crit-embedded) .toolbar, html.crit-shell-real .toolbar {
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  padding-left: calc(50vw - 50%) !important;
+  padding-right: calc(50vw - 50%) !important;
+}
+</style>
+<!-- crit-gwan-stickerfull: 스티커를 상세/프로필 페이지 전체에 붙이기 + 스티커 리스트 관리 -->
+<style>
+  #detail { position: relative; }
+  #pform { position: relative; }
+</style>
+
+<!-- crit-gwan-stk-liveresize: 스티커 크기/위치는 refreshStickers()가 호출될 때만 다시 계산되는데,
+     지금까지는 창을 드래그로 줄이는 동안 이걸 다시 불러주는 리스너가 하나도 없었다(실제 겪은
+     버그: 자관리스트는 다른 이유로 자주 다시 그려져서 줄어드는 것처럼 보였지만, 자관세부/
+     프로필뷰/소개는 한 번 그려지면 창을 줄여도 스티커가 그 크기 그대로 멈춰 있었음 - "소개에서나
+     자관세부는 다르게 동작해"). CDP 등 일부 환경에서 window resize 이벤트가 안 오는 경우도
+     있어서(직접 확인한 문제) ResizeObserver를 우선으로 쓰고 resize 이벤트는 보조로 둔다 -->
+
+<!-- crit-gwanlog-dnd: 자관 로그리스트 드래그 정렬 (실시간 밀어내기) -->
+<style>
+  .logrow.ldragging { opacity: .25; }
+</style>
+
+<style>/* crit-hscrollbar-kill: 어떤 경우에도 문서 가로 스크롤바가 보이지 않게 (내부 컴포넌트 스크롤은 유지) */
+html:not(.crit-embedded)::-webkit-scrollbar:horizontal, html.crit-shell-real::-webkit-scrollbar:horizontal,
+html:not(.crit-embedded) body::-webkit-scrollbar:horizontal, html.crit-shell-real body::-webkit-scrollbar:horizontal { display: none; height: 0; }
+#critscroll { overflow-x: clip !important; }
+</style>
+<!-- crit-lightbox-nav: 이미지 크게 보기 통합 - 2장 이상이면 좌우 버튼, 이미지 로드 후 위치 보정 -->
+
+<!-- crit-open-gwan: jagwan.html?open=<자관 이름>으로 들어오면 해당 자관 상세를 바로 연다.
+     이 파일엔 초기화 스크립트가 여러 개 있고 그중 나중 것들이 무조건 renderList()를 부르는 게
+     있어서, 중간에서 renderDetail()을 불러도 그 뒤에 실행되는 스크립트가 다시 리스트로 덮어썼다 -
+     그래서 이 파일에서 가장 마지막에 실행되도록 맨 끝에 둔다. -->
+
+<script>(function(){function show(list,idx){var ov=document.createElement("div");ov.style.cssText="position:fixed;inset:0;z-index:99999;background:#000c;display:flex;align-items:center;justify-content:center;cursor:zoom-out";var img=document.createElement("img");img.style.cssText="max-width:86vw;max-height:88vh;border-radius:10px";var navs=[];function pos(){var r=img.getBoundingClientRect();if(r.width<10)return;navs.forEach(function(nb){nb.el.style.width=Math.max(6,nb.dir<0?r.left:(innerWidth-r.right))+"px";});}function render(){img.src=list[idx];}img.addEventListener("load",pos);window.addEventListener("resize",pos);render();img.addEventListener("click",function(e){e.stopPropagation()});ov.appendChild(img);if(list.length>1){[[-1,"M15 18l-6-6 6-6"],[1,"M9 6l6 6-6 6"]].forEach(function(cf){var b=document.createElement("button");b.className="critkeep";b.innerHTML='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="'+cf[1]+'"/></svg>';b.style.cssText="position:fixed;top:25%;bottom:25%;"+(cf[0]<0?"left:0":"right:0")+";display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:#f0edf3;cursor:pointer;z-index:2;transition:background .12s";b.addEventListener("click",function(e){e.stopPropagation();idx=(idx+cf[0]+list.length)%list.length;render();});navs.push({dir:cf[0],el:b});ov.appendChild(b);});requestAnimationFrame(pos);}ov.addEventListener("click",function(e){if(e.target===img)return;ov.remove()});document.body.appendChild(ov);}function bgUrl(el){var bg=getComputedStyle(el).backgroundImage;if(!bg||bg.indexOf("url(")!==0)return null;var u=bg.slice(4,-1);var q=u.charAt(0);if(q===String.fromCharCode(34)||q===String.fromCharCode(39))u=u.slice(1,-1);return u;}document.addEventListener("click",function(e){if(!e.target.closest)return;var g=e.target.closest(".gitem:not(.gadd)");if(g){var gal=g.closest(".gal")||g.parentNode;var all=Array.prototype.slice.call(gal.querySelectorAll(".gitem:not(.gadd)"));var list=all.map(bgUrl).filter(Boolean);var idx=Math.max(0,all.indexOf(g));if(list.length){show(list,Math.min(idx,list.length-1));return;}}var pg=e.target.closest(".pimgs .pimg");if(pg){var pw=pg.closest(".pimgs");var pall=Array.prototype.slice.call(pw.querySelectorAll(".pimg"));var plist=pall.map(bgUrl).filter(Boolean);if(plist.length){show(plist,Math.max(0,pall.indexOf(pg)));return;}}var im=e.target.closest(".pimgs img, .ptxt img, .btext img, .mcontent img, .pv-text img");if(im&&im.src)show([im.src],0);});})();(function(){document.querySelectorAll(".logrow").forEach(function(r){var a=r.querySelector(".llink");if(!a)return;r.style.cursor="pointer";r.addEventListener("click",function(){if(a.getAttribute("target")==="_blank")window.open(a.getAttribute("href"));else location.href=a.getAttribute("href");})});})();(function(){document.addEventListener("click",function(e){var sp=e.target.closest?e.target.closest(".post.spoiled"):null;if(!sp)return;e.preventDefault();e.stopPropagation();var ov=document.createElement("div");ov.style.cssText="position:fixed;inset:0;z-index:99998;background:#0008;display:flex;align-items:center;justify-content:center";var md=document.createElement("div");md.style.cssText="background:var(--panel,#1d1b21);border:1px solid var(--line,#34313a);border-radius:14px;padding:20px 22px;width:min(300px,86vw);color:var(--text,#f0edf3)";md.innerHTML="<div style=\"font-size:14px;font-weight:800;margin-bottom:8px\">스포일러</div><div style=\"color:var(--dim,#9a95a0);font-size:12.5px;line-height:1.7;margin-bottom:14px\">스포일러를 확인하시겠습니까?</div>";var row=document.createElement("div");row.style.cssText="display:flex;gap:8px;justify-content:flex-end";function mkB(t,pr){var b=document.createElement("button");b.textContent=t;b.className="critkeep";b.style.cssText="border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit;"+(pr?"background:var(--accent,#B26A9E);border:1px solid var(--accent,#B26A9E);color:#fff":"background:var(--panel2,#26242c);border:1px solid var(--line,#34313a);color:var(--text,#f0edf3)");row.appendChild(b);return b;}mkB("취소").addEventListener("click",function(){ov.remove()});mkB("확인",1).addEventListener("click",function(){sp.classList.remove("spoiled");ov.remove()});md.appendChild(row);ov.appendChild(md);ov.addEventListener("click",function(e2){if(e2.target===ov)ov.remove()});document.body.appendChild(ov);},true);})();(function(){var CRIT_BUILD_TS=1787307882236;setTimeout(function(){try{fetch(location.pathname,{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){var m=t.match(/CRIT_BUILD_TS ?= ?(\d+)/);if(!m)return;var latest=Number(m[1]);if(latest>CRIT_BUILD_TS&&sessionStorage.getItem("crit-seen-build")!==String(latest)){sessionStorage.setItem("crit-seen-build",String(latest));location.reload();}}).catch(function(){});}catch(e){}},1200);})();</script><script>var GM=[];document.querySelectorAll(".gcard").forEach(function(c,i){c.style.cursor="pointer";c.addEventListener("click",function(){location.href="jagwan_g"+GM[i]+".html"})});</script><script></script></body></html>
